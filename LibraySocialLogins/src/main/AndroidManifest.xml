@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tig.libraysociallogins">
+
+    <application>
+        <activity android:name=".activity.LibrarySocialLoginWebViewActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:launchMode="singleTop">
+        </activity>
+    </application>
+</manifest>
+

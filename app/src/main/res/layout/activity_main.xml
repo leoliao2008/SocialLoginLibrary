@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="vertical">
+
+    <Button
+        android:onClick="toOfficialSDK"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Login Using Google Official SDK"
+        android:textAllCaps="false"/>
+
+    <Button
+        android:onClick="toAmazonLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Login Using Amazon Social Login"
+        android:textAllCaps="false"/>
+
+    <Button
+        android:onClick="toCustomizedGoogleLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Google Login Using Customized SDK"
+        android:textAllCaps="false"/>
+
+    <Button
+        android:onClick="toOAuth2GoogleLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Google Login Using OAuth 2.0 SDK"
+        android:textAllCaps="false"/>
+
+    <Button
+        android:onClick="toFbOfficialLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Facebook Official Login"
+        android:textAllCaps="false"/>
+
+    <Button
+        android:onClick="toFbCustomizedLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Facebook Customized Login"
+        android:textAllCaps="false"/>
+
+</LinearLayout>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#F35454">
+
+        <ImageView
+            android:id="@+id/lib_social_log_in_activity_web_view_iv_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:src="@drawable/selector_arrow_back_white_to_black_64dp" />
+
+        <ImageView
+            android:id="@+id/lib_social_log_in_activity_web_view_iv_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:src="@drawable/selector_close_white_to_black_64dp" />
+
+        <ProgressBar
+            android:id="@+id/lib_social_log_in_activity_web_view_progress_bar"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="5dp"
+            android:layout_gravity="bottom"
+            android:progressDrawable="@drawable/layer_list_progress_bar_bg"
+            android:visibility="invisible" />
+    </FrameLayout>
+
+    <WebView
+        android:id="@+id/lib_social_log_in_activity_web_view_web_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+
+</LinearLayout>

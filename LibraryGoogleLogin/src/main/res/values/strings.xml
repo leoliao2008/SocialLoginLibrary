@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">LibraryGoogleLogin</string>
+    <string name="btn_text_copy">Copy</string>
+    <string name="title_your_user_code">Your User Code</string>
+</resources>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".google.OfficialSDKLoginActivity"
+    android:orientation="vertical">
+    <EditText
+        android:id="@+id/official_login_sdk_activity_edt_user_description"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+    <Button
+        android:onClick="startLoginWorkFlow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Login Using Official SDK"
+        android:textAllCaps="false"/>
+    <Button
+        android:onClick="signOut"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sign Out"
+        android:textAllCaps="false"/>
+    <Button
+        android:onClick="clearUserData"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Clear User Data"
+        android:textAllCaps="false"/>
+    <Button
+        android:onClick="verifyIdToken"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Verify ID Token"
+        android:textAllCaps="false"/>
+    <Button
+        android:onClick="getAccessToken"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Get Access Token"
+        android:textAllCaps="false"/>
+    <Button
+        android:onClick="uploadToken"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Upload to TGI Server"
+        android:textAllCaps="false"/>
+
+</LinearLayout>

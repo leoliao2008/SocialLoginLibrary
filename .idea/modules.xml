@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/GoogleSocialLoginDemo.iml" filepath="$PROJECT_DIR$/GoogleSocialLoginDemo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/LibraryFacebookLogin/LibraryFacebookLogin.iml" filepath="$PROJECT_DIR$/LibraryFacebookLogin/LibraryFacebookLogin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/LibraryGoogleLogin/LibraryGoogleLogin.iml" filepath="$PROJECT_DIR$/LibraryGoogleLogin/LibraryGoogleLogin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/LibraryLoginWithAmazon/LibraryLoginWithAmazon.iml" filepath="$PROJECT_DIR$/LibraryLoginWithAmazon/LibraryLoginWithAmazon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/LibraySocialLogins/LibraySocialLogins.iml" filepath="$PROJECT_DIR$/LibraySocialLogins/LibraySocialLogins.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+    </modules>
+  </component>
+</project>
