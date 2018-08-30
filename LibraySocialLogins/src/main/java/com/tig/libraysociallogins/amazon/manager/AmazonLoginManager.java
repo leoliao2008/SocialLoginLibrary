@@ -26,7 +26,7 @@ public class AmazonLoginManager extends BaseLoginManager {
         mState = genAntiForgeryTokenState();
         WeakReference<Activity> ref=new WeakReference<>(activity);
         if(ref.get()!=null){
-            LibrarySocialLoginWebViewActivity.setAccessTokenListener(new GetPermissionListener(){
+            LibrarySocialLoginWebViewActivity.setGetPermissionListener(new GetPermissionListener(){
                 @Override
                 public void onError(String msg) {
                     super.onError(msg);
@@ -73,10 +73,7 @@ public class AmazonLoginManager extends BaseLoginManager {
 
             @Override
             public void onTokenValid() {
-                mModel.requestUserProfile(
-                        accessToken,
-                        mListener
-                );
+                mModel.requestUserProfile(accessToken, mListener);
             }
 
             @Override

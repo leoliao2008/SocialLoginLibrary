@@ -55,7 +55,7 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
     private String mRedirectUri;
     private String mClientSecret;
     private int mSocialProvider;
-    private static GetPermissionListener mAccessTokenListener;
+    private static GetPermissionListener mGetPermissionListener;
     private AmazonSocialLoginModel mAmazonSocialLoginModel;
 
 
@@ -126,7 +126,7 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
 
                             @Override
                             public void onError(String msg) {
-                                mAccessTokenListener.onError(msg);
+                                mGetPermissionListener.onError(msg);
                                 finish();
                             }
                         }
@@ -230,7 +230,7 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
                             break;
                         case SOCIAL_PROVIDER_AMAZON:
                             AmazonAuthCode amazonAuthCode = genAmazonAuthCode(url);
-                            mAccessTokenListener.onGetAmazonAuthCode(amazonAuthCode);
+                            mGetPermissionListener.onGetAmazonAuthCode(amazonAuthCode);
                             break;
                         case SOCIAL_PROVIDER_FACEBOOK:
                             break;
@@ -315,7 +315,7 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        mAccessTokenListener = null;
+        mGetPermissionListener = null;
         //this is vital for facebook login
         CookieManager.getInstance().removeAllCookies(null);
         super.onDestroy();
@@ -369,7 +369,7 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
     }
 
 
-    public static void setAccessTokenListener(GetPermissionListener listener) {
-        mAccessTokenListener = listener;
+    public static void setGetPermissionListener(GetPermissionListener listener) {
+        mGetPermissionListener = listener;
     }
 }
