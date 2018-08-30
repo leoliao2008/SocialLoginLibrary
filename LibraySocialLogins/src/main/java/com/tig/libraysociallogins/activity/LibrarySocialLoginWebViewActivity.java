@@ -23,6 +23,8 @@ import com.tig.libraysociallogins.R;
 import com.tig.libraysociallogins.amazon.bean.AmazonAuthCode;
 import com.tig.libraysociallogins.amazon.models.AmazonSocialLoginModel;
 import com.tig.libraysociallogins.base.BaseLoginManager;
+import com.tig.libraysociallogins.google.manager.GoogleLoginManager;
+import com.tig.libraysociallogins.google.models.GoogleSocialLoginModel;
 import com.tig.libraysociallogins.listeners.GetPermissionListener;
 import com.tig.libraysociallogins.listeners.LoadSocialLoginFrontPageListener;
 
@@ -57,6 +59,8 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
     private int mSocialProvider;
     private static GetPermissionListener mGetPermissionListener;
     private AmazonSocialLoginModel mAmazonSocialLoginModel;
+    private GoogleSocialLoginModel mGoogleSocialLoginModel;
+    private LoadSocialLoginFrontPageListener mLoadSocialLoginFrontPageListener;
 
 
     public static void start(
@@ -105,6 +109,24 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
         initListeners();
 
         //https://www.cnblogs.com/baiqiantao/p/7249835.html 此处有坑
+        mLoadSocialLoginFrontPageListener = new LoadSocialLoginFrontPageListener() {
+            @Override
+            public void onGetLoginPageSrcCode(String htmlSrcCode) {
+                mWebView.loadDataWithBaseURL(
+                        null,
+                        htmlSrcCode,
+                        "text/html",
+                        "utf-8",
+                        null
+                );
+            }
+
+            @Override
+            public void onError(String msg) {
+                mGetPermissionListener.onError(msg);
+                finish();
+            }
+        };
         switch (mSocialProvider) {
             case SOCIAL_PROVIDER_AMAZON:
                 mAmazonSocialLoginModel = new AmazonSocialLoginModel();
@@ -112,29 +134,20 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
                         mClientId,
                         mState,
                         mRedirectUri,
-                        new LoadSocialLoginFrontPageListener() {
-                            @Override
-                            public void onGetLoginPageSrcCode(String htmlSrcCode) {
-                                mWebView.loadDataWithBaseURL(
-                                        null,
-                                        htmlSrcCode,
-                                        "text/html",
-                                        "utf-8",
-                                        null
-                                );
-                            }
-
-                            @Override
-                            public void onError(String msg) {
-                                mGetPermissionListener.onError(msg);
-                                finish();
-                            }
-                        }
+                        mLoadSocialLoginFrontPageListener
                 );
                 break;
             case SOCIAL_PROVIDER_FACEBOOK:
                 break;
             case SOCIAL_PROVIDER_GOOGLE:
+                mGoogleSocialLoginModel = new GoogleSocialLoginModel();
+                mGoogleSocialLoginModel.requestUserAuthentication(
+                        GoogleLoginManager.getGoogleDiscoveryDoc(),
+                        mClientId,
+                        mRedirectUri,
+                        mState,
+                        false,
+                        mLoadSocialLoginFrontPageListener);
                 break;
             default:
                 break;
@@ -227,6 +240,7 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
                     mProgressBar.setVisibility(View.GONE);
                     switch (mSocialProvider) {
                         case SOCIAL_PROVIDER_GOOGLE:
+                            //todo
                             break;
                         case SOCIAL_PROVIDER_AMAZON:
                             AmazonAuthCode amazonAuthCode = genAmazonAuthCode(url);
@@ -324,6 +338,7 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
 
     /**
      * https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#access-token-response
+     *
      * @param url
      * @return
      */

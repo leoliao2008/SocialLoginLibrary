@@ -5,21 +5,21 @@ package com.tig.libraysociallogins.google.models;
 
 import com.tig.libraysociallogins.base.BaseLoginModel;
 import com.tig.libraysociallogins.google.beans.GoogleDiscoveryDoc;
+import com.tig.libraysociallogins.listeners.LoadSocialLoginFrontPageListener;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.URLDecoder;
-import java.security.SecureRandom;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Response;
 
-public class GoogleLoginModel extends BaseLoginModel {
+public class GoogleSocialLoginModel extends BaseLoginModel {
 
 
     /**
@@ -50,7 +50,6 @@ public class GoogleLoginModel extends BaseLoginModel {
      * @param redirectUri
      * @param tokenState
      * @param isRequestNewRefreshToken
-     * @param callback
      */
     public void requestUserAuthentication(
             GoogleDiscoveryDoc doc,
@@ -58,7 +57,7 @@ public class GoogleLoginModel extends BaseLoginModel {
             final String redirectUri,
             final String tokenState,
             final boolean isRequestNewRefreshToken,
-            Callback callback) {
+            final LoadSocialLoginFrontPageListener listener) {
 
         HashMap<String, String> requestBody = new HashMap<String, String>() {
             {
@@ -93,11 +92,24 @@ public class GoogleLoginModel extends BaseLoginModel {
                 .url(sb.toString())
                 .get()
                 .build();
-        executeRequest(request, callback);
+        executeRequest(request, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                listener.onError(e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(!checkAndHandleResponseError(response, listener)){
+                    listener.onGetLoginPageSrcCode(response.body().string());
+                }
+
+            }
+        });
     }
 
     /**
-     * Use the authorization code returned by the consent of users(See:{@link GoogleLoginModel#requestUserAuthentication(GoogleDiscoveryDoc, String, String, String, boolean, Callback)})
+     * Use the authorization code returned by the consent of users(See:{@link GoogleSocialLoginModel#requestUserAuthentication(GoogleDiscoveryDoc, String, String, String, boolean, Callback)})
      * to exchange for access token and id token.
      * <a href="https://developers.google.com/identity/protocols/OpenIDConnect">Click to know more...</a>
      *
