@@ -4,29 +4,29 @@ import android.app.Activity;
 
 import com.tig.libraysociallogins.activity.LibrarySocialLoginWebViewActivity;
 import com.tig.libraysociallogins.amazon.bean.AmazonAuthCode;
-import com.tig.libraysociallogins.amazon.listensers.AmazonSocialLoginListener;
+import com.tig.libraysociallogins.amazon.listensers.AmazonLoginListener;
 import com.tig.libraysociallogins.amazon.listensers.CheckAmazonAccessTokenValidListener;
-import com.tig.libraysociallogins.amazon.models.AmazonSocialLoginModel;
+import com.tig.libraysociallogins.amazon.models.AmazonLoginModel;
 import com.tig.libraysociallogins.base.BaseLoginManager;
-import com.tig.libraysociallogins.listeners.GetPermissionListener;
+import com.tig.libraysociallogins.listeners.SocialLoginListener;
 
 import java.lang.ref.WeakReference;
 
 public class AmazonLoginManager extends BaseLoginManager {
-    private AmazonSocialLoginListener mListener;
-    private AmazonSocialLoginModel mModel;
+    private AmazonLoginListener mListener;
+    private AmazonLoginModel mModel;
     private String mState;
 
-    public AmazonLoginManager(AmazonSocialLoginListener listener) {
+    public AmazonLoginManager(AmazonLoginListener listener) {
         mListener = listener;
-        mModel=new AmazonSocialLoginModel();
+        mModel=new AmazonLoginModel();
     }
 
     public void getAccessToken(Activity activity, final String clientId, final String clientSecret, final String redirectUri){
         mState = genAntiForgeryTokenState();
         WeakReference<Activity> ref=new WeakReference<>(activity);
         if(ref.get()!=null){
-            LibrarySocialLoginWebViewActivity.setGetPermissionListener(new GetPermissionListener(){
+            LibrarySocialLoginWebViewActivity.setSocialLoginListener(new SocialLoginListener(){
                 @Override
                 public void onError(String msg) {
                     super.onError(msg);
@@ -38,17 +38,15 @@ public class AmazonLoginManager extends BaseLoginManager {
                     super.onGetAmazonAuthCode(amazonAuthCode);
                     if(!amazonAuthCode.getState().equals(mState)){
                         mListener.onError("Invalid state.");
-                    }else if(amazonAuthCode.getError()!=null){
-                        mListener.onError(amazonAuthCode.getError());
-                    }else {
-                        mModel.requestAccessToken(
-                                amazonAuthCode.getAuthCode(),
-                                redirectUri,
-                                clientId,
-                                clientSecret,
-                                mListener
-                        );
+                        return;
                     }
+                    mModel.requestAccessToken(
+                            amazonAuthCode.getAuthCode(),
+                            redirectUri,
+                            clientId,
+                            clientSecret,
+                            mListener
+                    );
                 }
             });
 

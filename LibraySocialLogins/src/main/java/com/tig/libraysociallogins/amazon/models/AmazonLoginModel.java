@@ -4,7 +4,7 @@ package com.tig.libraysociallogins.amazon.models;
 import com.google.gson.Gson;
 import com.tig.libraysociallogins.amazon.bean.AmazonAccessToken;
 import com.tig.libraysociallogins.amazon.bean.AmazonUserProfile;
-import com.tig.libraysociallogins.amazon.listensers.AmazonSocialLoginListener;
+import com.tig.libraysociallogins.amazon.listensers.AmazonLoginListener;
 import com.tig.libraysociallogins.amazon.listensers.CheckAmazonAccessTokenValidListener;
 import com.tig.libraysociallogins.base.BaseLoginModel;
 import com.tig.libraysociallogins.listeners.LoadSocialLoginFrontPageListener;
@@ -18,7 +18,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class AmazonSocialLoginModel extends BaseLoginModel {
+public class AmazonLoginModel extends BaseLoginModel {
 
     /**
      * <a href="https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html">Official Reference<a/>
@@ -65,7 +65,7 @@ public class AmazonSocialLoginModel extends BaseLoginModel {
             String redirectUri,
             String clientId,
             String clientSecret,
-            final AmazonSocialLoginListener listener) {
+            final AmazonLoginListener listener) {
 
         OkHttpClient client = new OkHttpClient();
         FormBody formBody = new FormBody.Builder()
@@ -107,7 +107,7 @@ public class AmazonSocialLoginModel extends BaseLoginModel {
             String refreshToken,
             String clientId,
             String clientSecret,
-            final AmazonSocialLoginListener listener) {
+            final AmazonLoginListener listener) {
         OkHttpClient client = new OkHttpClient();
         FormBody formBody = new FormBody.Builder()
                 .add("grant_type", "refresh_token")
@@ -171,7 +171,7 @@ public class AmazonSocialLoginModel extends BaseLoginModel {
     /**
      * https://developer.amazon.com/docs/login-with-amazon/obtain-customer-profile.html
      */
-    public void requestUserProfile(String accessToken, final AmazonSocialLoginListener listener) {
+    public void requestUserProfile(String accessToken, final AmazonLoginListener listener) {
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url("https://api.amazon.com/user/profile?access_token=" + accessToken)

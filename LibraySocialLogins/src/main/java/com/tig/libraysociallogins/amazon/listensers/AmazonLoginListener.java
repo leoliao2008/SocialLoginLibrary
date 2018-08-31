@@ -4,7 +4,7 @@ import com.tig.libraysociallogins.amazon.bean.AmazonAccessToken;
 import com.tig.libraysociallogins.amazon.bean.AmazonUserProfile;
 import com.tig.libraysociallogins.base.BaseListener;
 
-public class AmazonSocialLoginListener implements BaseListener {
+public class AmazonLoginListener implements BaseListener {
     @Override
     public void onError(String msg) {
 

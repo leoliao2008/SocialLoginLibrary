@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -21,19 +22,24 @@ import android.widget.ProgressBar;
 import com.tig.libraysociallogins.LibrarySocialLoginsConstants;
 import com.tig.libraysociallogins.R;
 import com.tig.libraysociallogins.amazon.bean.AmazonAuthCode;
-import com.tig.libraysociallogins.amazon.models.AmazonSocialLoginModel;
+import com.tig.libraysociallogins.amazon.models.AmazonLoginModel;
 import com.tig.libraysociallogins.base.BaseLoginManager;
+import com.tig.libraysociallogins.facebook.beans.FacebookAccessToken;
+import com.tig.libraysociallogins.facebook.models.FacebookLoginModel;
+import com.tig.libraysociallogins.google.beans.GoogleAuthCode;
 import com.tig.libraysociallogins.google.manager.GoogleLoginManager;
-import com.tig.libraysociallogins.google.models.GoogleSocialLoginModel;
-import com.tig.libraysociallogins.listeners.GetPermissionListener;
+import com.tig.libraysociallogins.google.models.GoogleLoginModel;
+import com.tig.libraysociallogins.listeners.SocialLoginListener;
 import com.tig.libraysociallogins.listeners.LoadSocialLoginFrontPageListener;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 
@@ -57,9 +63,10 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
     private String mRedirectUri;
     private String mClientSecret;
     private int mSocialProvider;
-    private static GetPermissionListener mGetPermissionListener;
-    private AmazonSocialLoginModel mAmazonSocialLoginModel;
-    private GoogleSocialLoginModel mGoogleSocialLoginModel;
+    private static SocialLoginListener mSocialLoginListener;
+    private AmazonLoginModel mAmazonLoginModel;
+    private GoogleLoginModel mGoogleLoginModel;
+    private FacebookLoginModel mFacebookLoginModel;
     private LoadSocialLoginFrontPageListener mLoadSocialLoginFrontPageListener;
 
 
@@ -123,14 +130,14 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
 
             @Override
             public void onError(String msg) {
-                mGetPermissionListener.onError(msg);
+                mSocialLoginListener.onError(msg);
                 finish();
             }
         };
         switch (mSocialProvider) {
             case SOCIAL_PROVIDER_AMAZON:
-                mAmazonSocialLoginModel = new AmazonSocialLoginModel();
-                mAmazonSocialLoginModel.userSignIn(
+                mAmazonLoginModel = new AmazonLoginModel();
+                mAmazonLoginModel.userSignIn(
                         mClientId,
                         mState,
                         mRedirectUri,
@@ -138,10 +145,17 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
                 );
                 break;
             case SOCIAL_PROVIDER_FACEBOOK:
+                mFacebookLoginModel=new FacebookLoginModel();
+                mFacebookLoginModel.login(
+                        mClientId,
+                        mState,
+                        mRedirectUri,
+                        mLoadSocialLoginFrontPageListener
+                );
                 break;
             case SOCIAL_PROVIDER_GOOGLE:
-                mGoogleSocialLoginModel = new GoogleSocialLoginModel();
-                mGoogleSocialLoginModel.requestUserAuthentication(
+                mGoogleLoginModel = new GoogleLoginModel();
+                mGoogleLoginModel.requestUserAuthentication(
                         GoogleLoginManager.getGoogleDiscoveryDoc(),
                         mClientId,
                         mRedirectUri,
@@ -240,13 +254,41 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
                     mProgressBar.setVisibility(View.GONE);
                     switch (mSocialProvider) {
                         case SOCIAL_PROVIDER_GOOGLE:
-                            //todo
+                            GoogleAuthCode googleAuthCode = genGoogleAuthCode(url);
+                            String googleAuthCodeError = googleAuthCode.getError();
+                            if(TextUtils.isEmpty(googleAuthCodeError)){
+                                mSocialLoginListener.onGetGoogleAuthCode(googleAuthCode);
+                            }else {
+                                mSocialLoginListener.onError(googleAuthCodeError);
+                            }
                             break;
                         case SOCIAL_PROVIDER_AMAZON:
                             AmazonAuthCode amazonAuthCode = genAmazonAuthCode(url);
-                            mGetPermissionListener.onGetAmazonAuthCode(amazonAuthCode);
+                            String amazonAuthCodeError = amazonAuthCode.getError();
+                            if(TextUtils.isEmpty(amazonAuthCodeError)){
+                                mSocialLoginListener.onGetAmazonAuthCode(amazonAuthCode);
+                            }else {
+                                mSocialLoginListener.onError(amazonAuthCodeError);
+                            }
                             break;
                         case SOCIAL_PROVIDER_FACEBOOK:
+                            URI uri = null;
+                            try {
+                                uri = new URI(url);
+                                //for reference: https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow
+                                String query = uri.getQuery();//if "?" exist, that means there is an error
+                                String fragment = uri.getFragment();//if "#" exist, that means token is returned
+                                FacebookAccessToken accessToken = genFbAccessToken(query, fragment);
+                                String error = accessToken.getError();
+                                if(TextUtils.isEmpty(error)){
+                                    mSocialLoginListener.onGetFacebookAccessToken(accessToken);
+                                }else {
+                                    mSocialLoginListener.onError(error);
+                                }
+                            } catch (URISyntaxException e) {
+                                e.printStackTrace();
+                                mSocialLoginListener.onError(e.getMessage());
+                            }
                             break;
                         default:
                             break;
@@ -329,16 +371,17 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        mGetPermissionListener = null;
+        mSocialLoginListener = null;
         //this is vital for facebook login
-        CookieManager.getInstance().removeAllCookies(null);
+        if(mSocialProvider==SOCIAL_PROVIDER_FACEBOOK){
+            CookieManager.getInstance().removeAllCookies(null);
+        }
         super.onDestroy();
     }
 
 
     /**
      * https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#access-token-response
-     *
      * @param url
      * @return
      */
@@ -383,8 +426,96 @@ public class LibrarySocialLoginWebViewActivity extends AppCompatActivity {
         return bean;
     }
 
+    /**
+     * <a href="https://developers.google.com/identity/protocols/OpenIDConnect">Click to know more...</a>
+     * @param responseBody
+     * @return
+     */
+    private GoogleAuthCode genGoogleAuthCode(String responseBody) {
+        GoogleAuthCode authCode=new GoogleAuthCode();
+        try {
+            URL url=new URL(responseBody);
+            String[] queries = url.getQuery().split("&");
+            for(String query:queries){
+                String[] temp = query.split("=");
+                switch (temp[0]){
+                    case "state":
+                        authCode.setState(temp[1]);
+                        break;
+                    case "code":
+                        authCode.setAuthCode(temp[1]);
+                        break;
+                    case "error":
+                        authCode.setError(temp[1]);
+                        break;
+                }
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            mSocialLoginListener.onError(e.getMessage());
+            finish();
+        }
+        return authCode;
+    }
 
-    public static void setGetPermissionListener(GetPermissionListener listener) {
-        mGetPermissionListener = listener;
+    /**
+     * https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow
+     * @param query
+     * @param fragment
+     * @return
+     */
+    private FacebookAccessToken genFbAccessToken(String query, String fragment) {
+        FacebookAccessToken token = new FacebookAccessToken();
+        //there is an error
+        if (!TextUtils.isEmpty(query)) {
+            token.setIsError(true);
+            String[] querySplits = query.split("&");
+            for (String temp : querySplits) {
+                String[] tempSplits = temp.split("=");
+                if (tempSplits.length == 2) {
+                    switch (tempSplits[0]) {
+                        case "error_reason":
+                            token.setErrorReason(tempSplits[1]);
+                            break;
+                        case "error":
+                            token.setError(tempSplits[1]);
+                            break;
+                        case "error_description":
+                            token.setErrorDescription(tempSplits[1]);
+                            break;
+                    }
+                }
+            }
+        }
+        //there is an access token
+        if(!TextUtils.isEmpty(fragment)){
+            String[] fragmentSplits = fragment.split("&");
+            for(String temp:fragmentSplits){
+                String[] tempSplits = temp.split("=");
+                if(tempSplits.length==2){
+                    switch (tempSplits[0]){
+                        case "state":
+                            token.setState(tempSplits[1]);
+                            break;
+                        case "access_token":
+                            token.setAccessToken(tempSplits[1]);
+                            break;
+                        case "expires_in":
+                            //transform into milli seconds
+                            token.setExpiresIn(Long.valueOf(tempSplits[1])*1000);
+                            break;
+                    }
+                }
+            }
+        }
+
+        return token;
+    }
+
+
+
+
+    public static void setSocialLoginListener(SocialLoginListener listener) {
+        mSocialLoginListener = listener;
     }
 }

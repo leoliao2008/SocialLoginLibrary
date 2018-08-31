@@ -3,11 +3,21 @@ package com.tig.libraysociallogins.google.models;
 
 
 
+import android.text.TextUtils;
+
+import com.google.gson.Gson;
 import com.tig.libraysociallogins.base.BaseLoginModel;
+import com.tig.libraysociallogins.google.beans.GoogleBaseResponse;
 import com.tig.libraysociallogins.google.beans.GoogleDiscoveryDoc;
+import com.tig.libraysociallogins.google.beans.GoogleRefreshedAccessToken;
+import com.tig.libraysociallogins.google.beans.GoogleTokens;
+import com.tig.libraysociallogins.google.beans.GoogleUserProfile;
+import com.tig.libraysociallogins.google.listeners.GoogleLoginListener;
 import com.tig.libraysociallogins.listeners.LoadSocialLoginFrontPageListener;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,7 +29,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class GoogleSocialLoginModel extends BaseLoginModel {
+public class GoogleLoginModel extends BaseLoginModel {
 
 
     /**
@@ -109,7 +119,7 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
     }
 
     /**
-     * Use the authorization code returned by the consent of users(See:{@link GoogleSocialLoginModel#requestUserAuthentication(GoogleDiscoveryDoc, String, String, String, boolean, Callback)})
+     * Use the authorization code returned by the consent of users(See:{@link GoogleLoginModel#requestUserAuthentication(GoogleDiscoveryDoc, String, String, String, boolean, LoadSocialLoginFrontPageListener)})
      * to exchange for access token and id token.
      * <a href="https://developers.google.com/identity/protocols/OpenIDConnect">Click to know more...</a>
      *
@@ -118,7 +128,6 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
      * @param clientId
      * @param clientSecret
      * @param redirectUri
-     * @param callback
      */
     public void exchangeAuthCodeForTokens(
             GoogleDiscoveryDoc doc,
@@ -126,7 +135,7 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
             String clientId,
             String clientSecret,
             String redirectUri,
-            Callback callback) {
+            final GoogleLoginListener listener) {
         FormBody formBody = new FormBody.Builder()
                 .add("code", authCode)
                 .add("client_id", clientId)
@@ -139,7 +148,27 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
                 .post(formBody)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .build();
-        executeRequest(request, callback);
+        executeRequest(request, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                listener.onError(e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(!checkAndHandleResponseError(response,listener)){
+                    GoogleTokens tokens = new Gson().fromJson(response.body().string(), GoogleTokens.class);
+                    String error = tokens.getError();
+                    if(TextUtils.isEmpty(error)){
+                        listener.onGetGoogleTokens(tokens);
+                    }else {
+                        listener.onError(error);
+                    }
+
+                }
+
+            }
+        });
     }
 
     /**
@@ -152,14 +181,13 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
      * @param refreshToken
      * @param clientId
      * @param clientSecret
-     * @param callback
      */
     public void refreshAccessToken(
             GoogleDiscoveryDoc doc,
             String refreshToken,
             String clientId,
             String clientSecret,
-            Callback callback) {
+            final GoogleLoginListener listener) {
         FormBody formBody = new FormBody.Builder()
                 .add("refresh_token", refreshToken)
                 .add("client_id", clientId)
@@ -171,7 +199,27 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
                 .addHeader("Content-Type", "application/x-www-form-urlencoded")
                 .post(formBody)
                 .build();
-        executeRequest(request, callback);
+        executeRequest(request, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                listener.onError(e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(!checkAndHandleResponseError(response,listener)){
+                    String json = response.body().string();
+                    GoogleRefreshedAccessToken token = new Gson().fromJson(json, GoogleRefreshedAccessToken.class);
+                    String error = token.getError();
+                    if(TextUtils.isEmpty(error)){
+                        listener.onGetGoogleNewlyRefreshedAccessToken(token);
+                    }else {
+                        listener.onError(error);
+                    }
+                }
+
+            }
+        });
     }
 
     /**
@@ -184,9 +232,8 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
      * <a href="https://developers.google.com/identity/protocols/OAuth2WebServer#offline">Click here to know more...</a>
      * @param doc
      * @param accessToken
-     * @param callback
      */
-    public void revokeToken(GoogleDiscoveryDoc doc, String accessToken, Callback callback){
+    public void revokeToken(GoogleDiscoveryDoc doc, String accessToken, final GoogleLoginListener listener){
         StringBuilder sb=new StringBuilder();
         String url = sb.append(doc.getRevocation_endpoint())
                 .append("?token=")
@@ -196,7 +243,60 @@ public class GoogleSocialLoginModel extends BaseLoginModel {
                 .url(url)
                 .get()
                 .build();
-        executeRequest(request,callback);
+        executeRequest(request, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                listener.onError(e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(response.code()==200){
+                    listener.onRevokeAccessTokenSuccess();
+                }else {
+                    GoogleBaseResponse baseResponse = new Gson().fromJson(response.body().string(), GoogleBaseResponse.class);
+                    listener.onRevokeAccessTokenFail(baseResponse.getError());
+                }
+
+            }
+        });
+    }
+
+
+
+    /**
+     * https://developers.google.com/identity/sign-in/android/backend-auth
+     * @param idToken
+     */
+    public void getUserProfile(String idToken, final GoogleLoginListener listener) {
+        try {
+            idToken = URLDecoder.decode(idToken, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        final Request request = new Request.Builder()
+                .url("https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=" + idToken)
+                .get()
+                .build();
+        executeRequest(request, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                listener.onError(e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(!checkAndHandleResponseError(response,listener)){
+                    GoogleUserProfile userProfile = new Gson().fromJson(response.body().string(), GoogleUserProfile.class);
+                    String error = userProfile.getError();
+                    if(TextUtils.isEmpty(error)){
+                        listener.onGetUserProfile(userProfile);
+                    }else {
+                        listener.onError(error);
+                    }
+                }
+            }
+        });
     }
 
     private void executeRequest(Request request, Callback callback) {
